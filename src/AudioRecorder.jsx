@@ -1,13 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react';
 import RecordRTC, { invokeSaveAsDialog } from 'recordrtc';
 import recorderConfig from './recorderConfig.js';
-import fromStream from './ConversationTranscription.js';
+import { StartTranscribe, StopTranscribe } from './ConversationTranscription.js';
+import uploadBlob from './BlobStorage.js';
 
 const AudioRecorder = () => {
     const [stream, setStream] = useState(null);
     const [blob, setBlob] = useState(null);
     const refAudio = useRef(null);
     const recorderRef = useRef(null);
+    const conversationTranscriberRef = useRef(null); // Use useRef to persist the variable
 
     const handleRecording = async () => {
         // const cameraStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
@@ -16,24 +18,40 @@ const AudioRecorder = () => {
         setStream(mediaStream);
         recorderRef.current = new RecordRTC(mediaStream, recorderConfig);
         recorderRef.current.startRecording();
-        fromStream(mediaStream);
+
+        // Start the transcription and store the ConversationTranscriber object
+        conversationTranscriberRef.current = StartTranscribe(mediaStream);
     };
 
     const handleStop = () => {
         recorderRef.current.stopRecording(() => {
-            setBlob(recorderRef.current.getBlob());
-
-            // Stop the stream
-            if (stream) {
-                stream.getTracks().forEach(track => track.stop());
-                setStream(null);
-            }
-
+            const blob = recorderRef.current.getBlob();
+            setBlob(blob);
+            StopTranscribe(conversationTranscriberRef.current);
         });
     };
 
     const handleSave = () => {
-        invokeSaveAsDialog(blob);
+        // invokeSaveAsDialog(blob);
+        const formData = new FormData();
+        formData.append('file', blob);
+
+        fetch('http://localhost:3000/upload', {
+            method: 'POST',
+            body: formData
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.text();
+            })
+            .then(data => {
+                console.log('File uploaded to Azure Blob Storage:', data);
+            })
+            .catch(error => {
+                console.error('Error uploading file to Azure Blob Storage:', error);
+            });
     };
 
     useEffect(() => {

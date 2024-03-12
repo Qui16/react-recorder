@@ -37,9 +37,9 @@ async function main() {
 
         // Write the data to a file
         fs.writeFileSync('./downloaded_audio.wav', downloaded);
-        
+
         console.log('Blob was downloaded successfully');
-        
+
         fromFile('downloaded_audio.wav');
     } catch (err) {
         console.error(`Error: ${err.message}`);
