@@ -2,14 +2,17 @@ import React, { useState, useRef, useEffect } from 'react';
 import './App.css';
 import RecordRTC, { invokeSaveAsDialog } from 'recordrtc';
 import recorderConfig from './recorderConfig.js';
-import fromStream from './ConversationTranscription.js';
+import { StartTranscribe, StopTranscribe } from './ConversationTranscription.js';
+import uploadBlob from './BlobStorage.js';
 // import { AudioRecorder } from './AudioRecorder.jsx';
+
 
 function App() {
   const [stream, setStream] = useState(null);
   const [blob, setBlob] = useState(null);
   const refAudio = useRef(null);
   const recorderRef = useRef(null);
+  const conversationTranscriberRef = useRef(null); // Use useRef to persist the variable
 
   const handleRecording = async () => {
     // const cameraStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
@@ -18,12 +21,16 @@ function App() {
     setStream(mediaStream);
     recorderRef.current = new RecordRTC(mediaStream, recorderConfig);
     recorderRef.current.startRecording();
-    fromStream(mediaStream);
+
+    // Start the transcription and store the ConversationTranscriber object
+    conversationTranscriberRef.current = StartTranscribe(mediaStream);
   };
 
   const handleStop = () => {
     recorderRef.current.stopRecording(() => {
-      setBlob(recorderRef.current.getBlob());
+      const blob = recorderRef.current.getBlob();
+      setBlob(blob);
+      StopTranscribe(conversationTranscriberRef.current);
 
       // Stop the stream
       if (stream) {

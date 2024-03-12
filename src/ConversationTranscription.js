@@ -6,31 +6,14 @@ const SPEECH_KEY = '777c75ce17384fed960da55e553b832e'
 const SPEECH_REGION = 'australiaeast'
 const speechConfig = sdk.SpeechConfig.fromSubscription(SPEECH_KEY, SPEECH_REGION);
 
-
-
-
-
-
-const fromStream = (dataStream) => {
+const StartTranscribe = (dataStream) => {
 
     let dictionary = {};
-    const pushStream = sdk.AudioInputStream.createPushStream();
     // let audioConfig = sdk.AudioConfig.fromWavFileInput(fs.readFileSync(filename));
     const audioConfig = sdk.AudioConfig.fromStreamInput(dataStream);
     const conversationTranscriber = new sdk.ConversationTranscriber(speechConfig, audioConfig);
-    // dataStream.on('data', function (arrayBuffer) {
-    //     pushStream.write(arrayBuffer.slice());
-    // }).on('end', function () {
-    //     pushStream.close();
-    // });
 
 
-
-    // fs.createReadStream(filename).on('data', function(arrayBuffer) {
-    //     pushStream.write(arrayBuffer.slice());
-    // }).on('end', function() {
-    //     pushStream.close();
-    // });
 
     console.log("Transcribing: ");
 
@@ -47,9 +30,6 @@ const fromStream = (dataStream) => {
         console.log("Canceled event");
         console.log(e.errorDetails);
         conversationTranscriber.stopTranscribingAsync();
-        // console.log(transcription);
-        // const transcriptionJson = JSON.stringify(transcription, null, 2);
-        // Console.log('json',transcriptionJson);
         dictionary['transcription'] = transcription;
         console.log(dictionary.transcription);
     };
@@ -66,10 +46,19 @@ const fromStream = (dataStream) => {
             console.trace("err - starting transcription: " + err);
         }
     );
-
-    return dictionary;
+    // console.log(conversationTranscriber);
+    return conversationTranscriber;
 
 }
 
-export default fromStream;
+const StopTranscribe = (conversationTranscriber) => {
+    // console.log(conversationTranscriber);
+    //stop conversation transcription
+    conversationTranscriber.stopTranscribingAsync(
+        function () { console.log("Transcription stopped."); },
+        function (err) { console.trace("err - stopping transcription: " + err); }
+    );
+}
+
+export { StartTranscribe, StopTranscribe };
 
